@@ -9,8 +9,7 @@ app.include_router(router)
 origins = [
     "http://todo.debjotimallick.is-a.dev",
     "https://todo.debjotimallick.is-a.dev",
-    "http://localhost",
-    "http://localhost:8080",
+    "http://localhost:5173",
 ]
 
 app.add_middleware(

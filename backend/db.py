@@ -1,13 +1,13 @@
+import os
 from typing import Annotated
 from fastapi import Depends
 from sqlmodel import SQLModel, Session, create_engine
+from dotenv import load_dotenv
 
+load_dotenv()
 
-sqlite_file_name = "database.db"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
-
-connect_args = {"check_same_thread": False}
-engine = create_engine(sqlite_url, connect_args=connect_args)
+DATABASE_URL = os.getenv('DATABASE_URL')
+engine = create_engine(url=DATABASE_URL or "postgresql://postgres:postgres/localhost:5432/tododb")
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
