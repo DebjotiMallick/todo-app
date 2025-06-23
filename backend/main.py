@@ -7,8 +7,7 @@ app = FastAPI()
 app.include_router(router)
 
 origins = [
-    "http://todo.debjotimallick.is-a.dev",
-    "https://todo.debjotimallick.is-a.dev",
+    "https://todo.debjotimallick.store",
     "http://localhost:5173",
     "http://localhost",
     "http://localhost:3000"

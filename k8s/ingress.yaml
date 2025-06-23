@@ -10,6 +10,13 @@ spec:
     - host: todo.debjotimallick.store
       http:
         paths:
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: todoapp-backend
+                port:
+                  number: 8000
           - pathType: Prefix
             path: "/"
             backend:
