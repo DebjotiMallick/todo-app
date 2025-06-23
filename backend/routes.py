@@ -44,7 +44,7 @@ async def update_todo(todo_id: int, todo: TodoUpdate, session: SessionDep):
     return todo_db
 
 
-@router.delete("/heroes/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/todos/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_todo(todo_id: int, session: SessionDep):
     todo_db = session.get(Todo, todo_id)
     if not todo_db:
