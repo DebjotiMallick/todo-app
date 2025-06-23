@@ -39,7 +39,7 @@ pipeline {
                         dir('frontend') {
                             sh '''
                                 echo "Building Frontend Docker image..."
-                                docker build --build-arg VITE_API_BASE_URL=https://todo.debjotimallick.is-a.dev/api -t $FRONTEND_TAG .
+                                docker build --build-arg VITE_API_BASE_URL=https://todo.debjotimallick.store/api -t $FRONTEND_TAG .
                                 docker tag $FRONTEND_TAG $FRONTEND_LATEST
                             '''
                         }

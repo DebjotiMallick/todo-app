@@ -7,7 +7,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: todo.debjotimallick.is-a.dev
+    - host: todo.debjotimallick.store
       http:
         paths:
           - pathType: Prefix
