@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: todoapp-frontend
-          image: registry.digitalocean.com/debjotimallick/todoapp-frontend:199c33d
+          image: registry.digitalocean.com/debjotimallick/todoapp-frontend:524276c
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -22,8 +22,16 @@ spec:
               cpu: "500m"
           ports:
             - containerPort: 80
+          volumeMounts:
+            - name: nginx-certs
+              mountPath: /etc/nginx/ssl
       imagePullSecrets:
         - name: do-cr-pullsecret
+      volumes:
+        - name: nginx-certs
+          configMap:
+            name: nginx-certs
+
 ---
 apiVersion: v1
 kind: Service

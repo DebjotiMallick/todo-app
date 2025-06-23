@@ -4,8 +4,21 @@ metadata:
   name: todoapp-frontend
   labels:
     name: todoapp-frontend
+  annotations:
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/hsts: "true"
+    nginx.ingress.kubernetes.io/hsts-max-age: "31536000"
+    nginx.ingress.kubernetes.io/hsts-include-subdomains: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - todo.debjotimallick.store
+      secretName: tls-secret
   rules:
     - host: todo.debjotimallick.store
       http:
