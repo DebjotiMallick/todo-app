@@ -10,6 +10,8 @@ origins = [
     "http://todo.debjotimallick.is-a.dev",
     "https://todo.debjotimallick.is-a.dev",
     "http://localhost:5173",
+    "http://localhost",
+    "http://localhost:3000"
 ]
 
 app.add_middleware(
