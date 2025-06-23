@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: todoapp-frontend
+  namespace: todo-app
 spec:
   selector:
     matchLabels:
@@ -13,11 +14,26 @@ spec:
     spec:
       containers:
         - name: todoapp-frontend
-          image: todo-app-frontend:latest
-          imagePullPolicy: Never
+          image: registry.digitalocean.com/debjotimallick/todoapp-frontend:d37281e
+          imagePullPolicy: IfNotPresent
           resources:
             limits:
               memory: "128Mi"
               cpu: "500m"
           ports:
             - containerPort: 80
+      imagePullSecrets:
+        - name: do-cr-pullsecret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: todoapp-frontend
+  namespace: todo-app
+spec:
+  selector:
+    app: todoapp-frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80

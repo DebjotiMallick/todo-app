@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todoapp-backend
+  namespace: todo-app
+spec:
+  selector:
+    matchLabels:
+      app: todoapp-backend
+  template:
+    metadata:
+      labels:
+        app: todoapp-backend
+    spec:
+      containers:
+        - name: todoapp-backend
+          image: registry.digitalocean.com/debjotimallick/todoapp-backend:d37281e
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DATABASE_URL
+              value: postgresql://postgres:postgres@postgresql:5432/tododb
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 8000
+      imagePullSecrets:
+        - name: do-cr-pullsecret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: todoapp-backend
+  namespace: todo-app
+spec:
+  selector:
+    app: todoapp-backend
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
