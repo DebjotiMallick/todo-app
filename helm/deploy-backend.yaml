@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todoapp-backend
+spec:
+  selector:
+    matchLabels:
+      app: todoapp-backend
+  template:
+    metadata:
+      labels:
+        app: todoapp-backend
+    spec:
+      containers:
+        - name: todoapp-backend
+          image: todo-app-backend:latest
+          imagePullPolicy: Never
+          env:
+            - name: DATABASE_URL
+              value: postgresql://postgres:ODtPhuJyPs@postgresql:5432/tododb
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 8000

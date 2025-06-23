@@ -1,19 +1,21 @@
 services:
   frontend:
     container_name: todoapp-frontend
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        - VITE_API_BASE_URL=http://localhost:8000
     ports:
       - "80:80"
     depends_on:
       - backend
-    env_file:
-      - .env
     networks:
       - todoapp-network
 
   backend:
     container_name: todoapp-backend
-    build: ./backend
+    build:
+      context: ./backend
     depends_on:
       - database
     ports:

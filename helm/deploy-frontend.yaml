@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todoapp-frontend
+spec:
+  selector:
+    matchLabels:
+      app: todoapp-frontend
+  template:
+    metadata:
+      labels:
+        app: todoapp-frontend
+    spec:
+      containers:
+        - name: todoapp-frontend
+          image: todo-app-frontend:latest
+          imagePullPolicy: Never
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 80
