@@ -1,10 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "../api/axiosInstance";
-import type { TodoModel } from "@/models/todoModel";
+import type { UpdateTodoModel } from "@/models/todoModel";
 
 interface UpdateTodoParams {
   todoId: number;
-  todoData: Partial<TodoModel>;
+  todoData: UpdateTodoModel;
 }
 
 const updateTodo = async ({ todoId, todoData }: UpdateTodoParams) => {

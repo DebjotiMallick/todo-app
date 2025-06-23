@@ -9,9 +9,11 @@ import type {
 } from "@/models/todoModel";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -47,6 +49,7 @@ import {
 const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
   description: z.string().min(1, { message: "Description is required" }),
+  completed: z.boolean(),
 });
 
 const Todo = () => {
@@ -62,6 +65,7 @@ const Todo = () => {
     defaultValues: {
       title: "",
       description: "",
+      completed: false,
     },
   });
 
@@ -71,14 +75,16 @@ const Todo = () => {
     defaultValues: {
       title: "",
       description: "",
+      completed: false,
     },
   });
 
   // Handle form submission for creating todos
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     const newTodo: CreateTodoModel = {
-      ...values,
-      completed: false,
+      title: values.title,
+      description: values.description,
+      completed: values.completed,
     };
     createTodo(newTodo);
     form.reset();
@@ -90,6 +96,7 @@ const Todo = () => {
     editForm.reset({
       title: todo.title,
       description: todo.description,
+      completed: todo.completed,
     });
   };
 
@@ -105,6 +112,7 @@ const Todo = () => {
     const updatedTodo: UpdateTodoModel = {
       title: values.title,
       description: values.description,
+      completed: values.completed,
     };
     updateTodo({ todoId, todoData: updatedTodo });
     setEditingTodoId(null);
@@ -209,6 +217,26 @@ const Todo = () => {
                                 <Textarea {...field} />
                               </FormControl>
                               <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={editForm.control}
+                          name="completed"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel>Completed</FormLabel>
+                                <FormDescription>
+                                  Mark this todo as completed
+                                </FormDescription>
+                              </div>
                             </FormItem>
                           )}
                         />
