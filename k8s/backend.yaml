@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: todoapp-backend
-          image: registry.digitalocean.com/debjotimallick/todoapp-backend:5bd143d
+          image: registry.digitalocean.com/debjotimallick/todoapp-backend:d453189
           imagePullPolicy: IfNotPresent
           env:
             - name: DATABASE_URL
