@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    options {
+        skipDefaultCheckout true
+    }
+
     environment {
         REGISTRY_URL   = "registry.digitalocean.com"
         REGISTRY_NAME  = "debjotimallick"
@@ -18,6 +22,14 @@ pipeline {
         stage('Checkout SCM') {
             steps {
                 checkout scm
+                script {
+                    def commitMsg = sh(returnStdout: true, script: "git log -1 --pretty=%B").trim()
+                    if (commitMsg.contains("[skip ci]")) {
+                        echo "Skipping build due to commit message"
+                        currentBuild.result = 'NOT_BUILT'
+                        return
+                    }
+                }
             }
         }
 
@@ -85,7 +97,7 @@ pipeline {
                         
                         # Commit and push changes
                         git add k8s/backend.yaml k8s/frontend.yaml
-                        git commit -m "Update image tags to ${COMMIT_SHA}" || echo "No changes to commit"
+                        git commit -m "Update image tags to ${COMMIT_SHA} [skip ci]" || echo "No changes to commit"
                         
                         # Push changes back to the repository
                         git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/todo-app.git
