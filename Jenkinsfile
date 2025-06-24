@@ -124,18 +124,38 @@ pipeline {
         }
 
         stage('Update image tag in GitHub') {
-            when {
-                anyOf {
-                    changeset "backend/**"
-                    changeset "frontend/**"
-                }
-            }
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'GIT_CREDS', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
-                    sh '''
+            parallel {
+                stage('Update Backend Image Tag') {
+                    when {  
+                        changeset "backend/**"
+                    }
+                    steps {
+                        withCredentials([usernamePassword(credentialsId: 'GIT_CREDS', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                            sh '''
                         # Update backend image tag
                         sed -i "s|image: registry.digitalocean.com/debjotimallick/todoapp-backend:[a-z0-9]*|image: ${BACKEND_TAG}|" k8s/backend.yaml
-                                
+                        
+                        # Configure git
+                        git config --global user.name "${GIT_USERNAME}"
+                        git config --global user.email "debjoti.mallick@hotmail.com"
+                            
+                        # Commit and push changes
+                        git add k8s/backend.yaml
+                        git commit -m "Update image tags to ${COMMIT_SHA}" || echo "No changes to commit"
+                        
+                        # Push changes back to the repository
+                        git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/todo-app.git
+                        git push origin HEAD:main
+                        '''
+                    }
+                }
+                stage('Update Frontend Image Tag') {
+                    when {
+                        changeset "frontend/**"
+                    }
+                    steps {
+                        withCredentials([usernamePassword(credentialsId: 'GIT_CREDS', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                            sh '''
                         # Update frontend image tag
                         sed -i "s|image: registry.digitalocean.com/debjotimallick/todoapp-frontend:[a-z0-9]*|image: ${FRONTEND_TAG}|" k8s/frontend.yaml
                         
@@ -144,13 +164,14 @@ pipeline {
                         git config --global user.email "debjoti.mallick@hotmail.com"
                             
                         # Commit and push changes
-                        git add k8s/backend.yaml k8s/frontend.yaml
-                        git commit -m "Update image tags to ${COMMIT_SHA} [skip ci]" || echo "No changes to commit"
+                        git add k8s/frontend.yaml
+                        git commit -m "Update image tags to ${COMMIT_SHA}" || echo "No changes to commit"
                         
                         # Push changes back to the repository
                         git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/todo-app.git
                         git push origin HEAD:main
                         '''
+                    }
                 }
             }
         }
