@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    // options {
-    //     skipDefaultCheckout true
-    // }
-
     environment {
         REGISTRY_URL   = "registry.digitalocean.com"
         REGISTRY_NAME  = "debjotimallick"
@@ -22,21 +18,27 @@ pipeline {
         stage('Checkout SCM') {
             steps {
                 checkout scm
-                script {
-                    def commitMsg = sh(returnStdout: true, script: "git log -1 --pretty=%B").trim()
-                    echo "Commit message: ${commitMsg}"
-                    if (commitMsg.contains("[skip ci]")) {
-                        echo "Skipping build due to commit message"
-                        currentBuild.result = 'ABORTED'
-                        error('Build skipped due to [skip ci] in commit message')
-                    }
-                }
             }
         }
 
         stage('Build') {
+            when {
+                anyOf {
+                    changeset "**"
+                    not { changeset "k8s/**" }
+                    not { changeset "Jenkinsfile" }
+                    not { changeset "README.md" }
+                    not { changeset "docker-compose.yml" }
+                    not { changeset ".gitignore" }
+                }
+            }
             parallel {
                 stage('Build Backend') {
+                    when {
+                        anyOf {
+                            changeset "backend/**"
+                        }
+                    }
                     steps {
                         dir('backend') {
                             sh '''
@@ -48,6 +50,11 @@ pipeline {
                     }
                 }
                 stage('Build Frontend') {
+                    when {
+                        anyOf {
+                            changeset "frontend/**"
+                        }
+                    }
                     steps {
                         dir('frontend') {
                             sh '''
