@@ -3,7 +3,7 @@ import axiosInstance from "../api/axiosInstance";
 import type { CreateTodoModel } from "@/models/todoModel";
 
 const createTodo = async (newTodo: CreateTodoModel) => {
-  const response = await axiosInstance.post("/todos", newTodo);
+  const response = await axiosInstance.post("/todos/", newTodo);
   return response.data;
 };
 
