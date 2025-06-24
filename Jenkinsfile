@@ -70,9 +70,10 @@ pipeline {
 
         stage('Push to Container Registry') {
             when {
-                anyOf {
-                    expression { return env.STAGE_NAME == 'Build Backend' && currentBuild.currentResult == 'SUCCESS' }
-                    expression { return env.STAGE_NAME == 'Build Frontend' && currentBuild.currentResult == 'SUCCESS' }
+                expression {
+                    def backendBuilt = currentBuild.rawBuild.getStages().any { it.name == 'Build Backend' && it.status?.toString() == 'SUCCESS' }
+                    def frontendBuilt = currentBuild.rawBuild.getStages().any { it.name == 'Build Frontend' && it.status?.toString() == 'SUCCESS' }
+                    return backendBuilt || frontendBuilt
                 }
             }
             parallel {
