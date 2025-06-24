@@ -15,6 +15,16 @@ pipeline {
     }
 
     stages {
+        when {
+            anyOf {
+                changeset "**"
+                not { changeset "k8s/**" }
+                not { changeset "Jenkinsfile" }
+                not { changeset "README.md" }
+                not { changeset "docker-compose.yml" }
+                not { changeset ".gitignore" }
+            }
+        }
         stage('Checkout SCM') {
             steps {
                 checkout scm
@@ -22,16 +32,6 @@ pipeline {
         }
 
         stage('Build') {
-            when {
-                anyOf {
-                    changeset "**"
-                    not { changeset "k8s/**" }
-                    not { changeset "Jenkinsfile" }
-                    not { changeset "README.md" }
-                    not { changeset "docker-compose.yml" }
-                    not { changeset ".gitignore" }
-                }
-            }
             parallel {
                 stage('Build Backend') {
                     when {
