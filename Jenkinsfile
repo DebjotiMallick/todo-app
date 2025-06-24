@@ -147,6 +147,7 @@ pipeline {
                         git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/todo-app.git
                         git push origin HEAD:main
                         '''
+                        }
                     }
                 }
                 stage('Update Frontend Image Tag') {
@@ -171,6 +172,7 @@ pipeline {
                         git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/todo-app.git
                         git push origin HEAD:main
                         '''
+                        }
                     }
                 }
             }
