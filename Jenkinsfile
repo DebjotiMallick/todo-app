@@ -17,12 +17,8 @@ pipeline {
     stages {
         when {
             anyOf {
-                changeset "**"
-                not { changeset "k8s/**" }
-                not { changeset "Jenkinsfile" }
-                not { changeset "README.md" }
-                not { changeset "docker-compose.yml" }
-                not { changeset ".gitignore" }
+                changeset "backend/**"
+                changeset "frontend/**"
             }
         }
         stage('Checkout SCM') {
