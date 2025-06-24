@@ -3,7 +3,8 @@ from fastapi import APIRouter, HTTPException, Query, status
 from sqlmodel import select
 
 from models import Todo, TodoCreate, TodoPublic, TodoUpdate
-from db import SessionDep, create_db_and_tables
+from db import SessionDep
+
 
 router = APIRouter()
 
