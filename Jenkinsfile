@@ -71,6 +71,11 @@ pipeline {
         stage('Push to Container Registry') {
             parallel {
                 stage('Push Backend') {
+                    when {
+                        anyOf {
+                            changeset "backend/**"
+                        }
+                    }
                     steps {
                         withCredentials([usernamePassword(credentialsId: DOCKER_CREDS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                             sh '''
@@ -87,6 +92,11 @@ pipeline {
                     }
                 }
                 stage('Push Frontend') {
+                    when {
+                        anyOf {
+                            changeset "frontend/**"
+                        }
+                    }
                     steps {
                         withCredentials([usernamePassword(credentialsId: DOCKER_CREDS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                             sh '''
