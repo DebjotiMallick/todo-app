@@ -5,9 +5,7 @@ from sqlmodel import select
 from models import Todo, TodoCreate, TodoPublic, TodoUpdate
 from db import SessionDep
 
-
 router = APIRouter()
-
 
 @router.post("/api/todos/", response_model=TodoPublic, status_code=status.HTTP_201_CREATED)
 async def create_todo(todo: TodoCreate, session: SessionDep):
