@@ -5,13 +5,6 @@ from routes import router
 
 app = FastAPI()
 
-# origins = [
-#     "https://todo.debjotimallick.store",
-#     "http://localhost:5173",
-#     "http://localhost",
-#     "http://localhost:3000"
-# ]
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -22,9 +15,6 @@ app.add_middleware(
 
 app.include_router(router)
 
-
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
-
-
