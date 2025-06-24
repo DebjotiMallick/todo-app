@@ -7,6 +7,7 @@ from db import SessionDep
 
 router = APIRouter()
 
+
 @router.post("/api/todos/", response_model=TodoPublic, status_code=status.HTTP_201_CREATED)
 async def create_todo(todo: TodoCreate, session: SessionDep):
     todo_db = Todo.model_validate(todo)
