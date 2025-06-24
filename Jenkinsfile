@@ -15,19 +15,25 @@ pipeline {
     }
 
     stages {
-        when {
-            anyOf {
-                changeset "backend/**"
-                changeset "frontend/**"
-            }
-        }
         stage('Checkout SCM') {
+            when {
+                anyOf {
+                    changeset "backend/**"
+                    changeset "frontend/**"
+                }
+            }
             steps {
                 checkout scm
             }
         }
 
         stage('Build') {
+            when {
+                anyOf {
+                    changeset "backend/**"
+                    changeset "frontend/**"
+                }
+            }
             parallel {
                 stage('Build Backend') {
                     when {
@@ -65,6 +71,12 @@ pipeline {
         }
 
         stage('Push to Container Registry') {
+            when {
+                anyOf {
+                    changeset "backend/**"
+                    changeset "frontend/**"
+                }
+            }
             parallel {
                 stage('Push Backend') {
                     when {
@@ -112,6 +124,12 @@ pipeline {
         }
 
         stage('Update image tag in GitHub') {
+            when {
+                anyOf {
+                    changeset "backend/**"
+                    changeset "frontend/**"
+                }
+            }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'GIT_CREDS', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
                     sh '''
@@ -137,7 +155,6 @@ pipeline {
             }
         }
     }
-
 
     post {
         success {
