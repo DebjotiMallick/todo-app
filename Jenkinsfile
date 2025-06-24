@@ -69,53 +69,112 @@ pipeline {
         }
 
         stage('Push to Container Registry') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: DOCKER_CREDS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh '''
-                        echo "Logging in to DOCR..."
-                        echo "$DOCKER_PASS" | docker login "$REGISTRY_URL" -u "$DOCKER_USER" --password-stdin
+            when {
+                anyOf {
+                    expression { return env.STAGE_NAME == 'Build Backend' && currentBuild.currentResult == 'SUCCESS' }
+                    expression { return env.STAGE_NAME == 'Build Frontend' && currentBuild.currentResult == 'SUCCESS' }
+                }
+            }
+            parallel {
+                stage('Push Backend') {
+                    when {
+                        expression { 
+                            def buildStage = currentBuild.rawBuild.getStages().find { it.name == 'Build Backend' }
+                            return buildStage?.status?.toString() == 'SUCCESS'
+                        }
+                    }
+                    steps {
+                        withCredentials([usernamePassword(credentialsId: DOCKER_CREDS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                            sh '''
+                                echo "Logging in to DOCR..."
+                                echo "$DOCKER_PASS" | docker login "$REGISTRY_URL" -u "$DOCKER_USER" --password-stdin
 
-                        echo "Pushing Backend image..."
-                        docker push $BACKEND_TAG
-                        docker push $BACKEND_LATEST
+                                echo "Pushing Backend image..."
+                                docker push $BACKEND_TAG
+                                docker push $BACKEND_LATEST
 
-                        echo "Pushing Frontend image..."
-                        docker push $FRONTEND_TAG
-                        docker push $FRONTEND_LATEST
+                                docker logout "$REGISTRY_URL"
+                            '''
+                        }
+                    }
+                }
+                stage('Push Frontend') {
+                    when {
+                        expression { 
+                            def buildStage = currentBuild.rawBuild.getStages().find { it.name == 'Build Frontend' }
+                            return buildStage?.status?.toString() == 'SUCCESS'
+                        }
+                    }
+                    steps {
+                        withCredentials([usernamePassword(credentialsId: DOCKER_CREDS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                            sh '''
+                                echo "Logging in to DOCR..."
+                                echo "$DOCKER_PASS" | docker login "$REGISTRY_URL" -u "$DOCKER_USER" --password-stdin
 
-                        docker logout "$REGISTRY_URL"
-                    '''
+                                echo "Pushing Frontend image..."
+                                docker push $FRONTEND_TAG
+                                docker push $FRONTEND_LATEST
+
+                                docker logout "$REGISTRY_URL"
+                            '''
+                        }
+                    }
                 }
             }
         }
 
         stage('Update image tag in GitHub') {
+            when {
+                anyOf {
+                    expression {
+                        def pushBackend = currentBuild.rawBuild.getStages().find { it.name == 'Push Backend' }
+                        return pushBackend?.status?.toString() == 'SUCCESS'
+                    }
+                    expression {
+                        def pushFrontend = currentBuild.rawBuild.getStages().find { it.name == 'Push Frontend' }
+                        return pushFrontend?.status?.toString() == 'SUCCESS'
+                    }
+                }
+            }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'GIT_CREDS', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
-                    sh '''
-                        # Update backend image tag
-                        sed -i "s|image: registry.digitalocean.com/debjotimallick/todoapp-backend:[a-z0-9]*|image: ${BACKEND_TAG}|" k8s/backend.yaml
+                    script {
+                        def backendPushed = currentBuild.rawBuild.getStages().any { it.name == 'Push Backend' && it.status?.toString() == 'SUCCESS' }
+                        def frontendPushed = currentBuild.rawBuild.getStages().any { it.name == 'Push Frontend' && it.status?.toString() == 'SUCCESS' }
                         
-                        # Update frontend image tag
-                        sed -i "s|image: registry.digitalocean.com/debjotimallick/todoapp-frontend:[a-z0-9]*|image: ${FRONTEND_TAG}|" k8s/frontend.yaml
-                        
-                        # Configure git
-                        git config --global user.name "${GIT_USERNAME}"
-                        git config --global user.email "debjoti.mallick@hotmail.com"
-                        
-                        # Commit and push changes
-                        git add k8s/backend.yaml k8s/frontend.yaml
-                        git commit -m "Update image tags to ${COMMIT_SHA} [skip ci]" || echo "No changes to commit"
-                        
-                        # Push changes back to the repository
-                        git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/todo-app.git
-                        git push origin HEAD:main
-                    '''
+                        sh '''
+                            # Configure git
+                            git config --global user.name "${GIT_USERNAME}"
+                            git config --global user.email "debjoti.mallick@hotmail.com"
+                            
+                            # Update backend image tag if it was pushed
+                            if [ "${backendPushed}" = true ]; then
+                                echo "Updating backend image tag..."
+                                sed -i "s|image: registry.digitalocean.com/debjotimallick/todoapp-backend:[a-z0-9]*|image: ${BACKEND_TAG}|" k8s/backend.yaml
+                                git add k8s/backend.yaml
+                            fi
+                            
+                            # Update frontend image tag if it was pushed
+                            if [ "${frontendPushed}" = true ]; then
+                                echo "Updating frontend image tag..."
+                                sed -i "s|image: registry.digitalocean.com/debjotimallick/todoapp-frontend:[a-z0-9]*|image: ${FRONTEND_TAG}|" k8s/frontend.yaml
+                                git add k8s/frontend.yaml
+                            fi
+                            
+                            # Only commit and push if there are changes
+                            if ! git diff --cached --quiet; then
+                                git commit -m "Update image tags to ${COMMIT_SHA} [skip ci]"
+                                git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/todo-app.git
+                                git push origin HEAD:main
+                            else
+                                echo "No image tags to update"
+                            fi
+                        '''
+                    }
                 }
             }
         }
     }
-
 
     post {
         success {
