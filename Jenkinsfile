@@ -24,10 +24,11 @@ pipeline {
                 checkout scm
                 script {
                     def commitMsg = sh(returnStdout: true, script: "git log -1 --pretty=%B").trim()
+                    echo "Commit message: ${commitMsg}"
                     if (commitMsg.contains("[skip ci]")) {
                         echo "Skipping build due to commit message"
-                        currentBuild.result = 'NOT_BUILT'
-                        return
+                        currentBuild.result = 'ABORTED'
+                        error('Build skipped due to [skip ci] in commit message')
                     }
                 }
             }
