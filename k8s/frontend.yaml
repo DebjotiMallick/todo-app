@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: todoapp-frontend
-          image: registry.digitalocean.com/debjotimallick/todoapp-frontend:73793fd
+          image: registry.digitalocean.com/debjotimallick/todoapp-frontend:948b0c0
           imagePullPolicy: IfNotPresent
           resources:
             limits:
