@@ -1,9 +1,9 @@
 pipeline {
     agent any
 
-    options {
-        skipDefaultCheckout true
-    }
+    // options {
+    //     skipDefaultCheckout true
+    // }
 
     environment {
         REGISTRY_URL   = "registry.digitalocean.com"
