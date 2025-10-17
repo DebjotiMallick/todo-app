@@ -2,16 +2,16 @@ pipeline {
     agent any
 
     environment {
-        REGISTRY_URL   = "registry.digitalocean.com"
+        REGISTRY_URL   = "docker.io"
         REGISTRY_NAME  = "debjotimallick"
-        BACKEND_IMAGE  = "todoapp-backend"
-        FRONTEND_IMAGE = "todoapp-frontend"
+        BACKEND_IMAGE  = "todo-app-backend"
+        FRONTEND_IMAGE = "todo-app-frontend"
         DOCKER_CREDS   = "DOCKER_CREDS"
-        COMMIT_SHA     = "${env.GIT_COMMIT.take(7)}"
-        BACKEND_TAG    = "${REGISTRY_URL}/${REGISTRY_NAME}/${BACKEND_IMAGE}:${COMMIT_SHA}"
-        BACKEND_LATEST = "${REGISTRY_URL}/${REGISTRY_NAME}/${BACKEND_IMAGE}:latest"
-        FRONTEND_TAG   = "${REGISTRY_URL}/${REGISTRY_NAME}/${FRONTEND_IMAGE}:${COMMIT_SHA}"
-        FRONTEND_LATEST= "${REGISTRY_URL}/${REGISTRY_NAME}/${FRONTEND_IMAGE}:latest"
+        // COMMIT_SHA     = "${env.GIT_COMMIT.take(7)}"
+        // BACKEND_TAG    = "${REGISTRY_URL}/${REGISTRY_NAME}/${BACKEND_IMAGE}:${COMMIT_SHA}"
+        // BACKEND_LATEST = "${REGISTRY_URL}/${REGISTRY_NAME}/${BACKEND_IMAGE}:latest"
+        // FRONTEND_TAG   = "${REGISTRY_URL}/${REGISTRY_NAME}/${FRONTEND_IMAGE}:${COMMIT_SHA}"
+        // FRONTEND_LATEST= "${REGISTRY_URL}/${REGISTRY_NAME}/${FRONTEND_IMAGE}:latest"
     }
 
     stages {
@@ -24,6 +24,21 @@ pipeline {
             }
             steps {
                 checkout scm
+            }
+        }
+
+        stage('Determine Image Tag') {
+            steps {
+                script {
+                    // try to get an exact tag for HEAD, otherwise fall back to short commit SHA
+                    def tag = sh(returnStdout: true, script: 'git describe --tags --exact-match || git rev-parse --short=7 HEAD').trim()
+                    env.IMAGE_TAG = tag
+                    env.BACKEND_TAG = "${env.REGISTRY_URL}/${env.REGISTRY_NAME}/${env.BACKEND_IMAGE}:${tag}"
+                    env.BACKEND_LATEST = "${env.REGISTRY_URL}/${env.REGISTRY_NAME}/${env.BACKEND_IMAGE}:latest"
+                    env.FRONTEND_TAG = "${env.REGISTRY_URL}/${env.REGISTRY_NAME}/${env.FRONTEND_IMAGE}:${tag}"
+                    env.FRONTEND_LATEST = "${env.REGISTRY_URL}/${env.REGISTRY_NAME}/${env.FRONTEND_IMAGE}:latest"
+                    echo "Using image tag: ${env.IMAGE_TAG}"
+                }
             }
         }
 
@@ -87,7 +102,7 @@ pipeline {
                     steps {
                         withCredentials([usernamePassword(credentialsId: DOCKER_CREDS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                             sh '''
-                                echo "Logging in to DOCR..."
+                                echo "Logging in to Container Registry..."
                                 echo "$DOCKER_PASS" | docker login "$REGISTRY_URL" -u "$DOCKER_USER" --password-stdin
 
                                 echo "Pushing Backend image..."
@@ -108,7 +123,7 @@ pipeline {
                     steps {
                         withCredentials([usernamePassword(credentialsId: DOCKER_CREDS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                             sh '''
-                                echo "Logging in to DOCR..."
+                                echo "Logging in to Container Registry..."
                                 echo "$DOCKER_PASS" | docker login "$REGISTRY_URL" -u "$DOCKER_USER" --password-stdin
 
                                 echo "Pushing Frontend image..."
@@ -117,61 +132,6 @@ pipeline {
 
                                 docker logout "$REGISTRY_URL"
                             '''
-                        }
-                    }
-                }
-            }
-        }
-
-        stage('Update image tag in GitHub') {
-            parallel {
-                stage('Update Backend Image Tag') {
-                    when {  
-                        changeset "backend/**"
-                    }
-                    steps {
-                        withCredentials([usernamePassword(credentialsId: 'GIT_CREDS', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
-                            sh '''
-                        # Update backend image tag
-                        sed -i "s|image: registry.digitalocean.com/debjotimallick/todoapp-backend:[a-z0-9]*|image: ${BACKEND_TAG}|" k8s/backend.yaml
-                        
-                        # Configure git
-                        git config --global user.name "${GIT_USERNAME}"
-                        git config --global user.email "debjoti.mallick@hotmail.com"
-                            
-                        # Commit and push changes
-                        git add k8s/backend.yaml
-                        git commit -m "Update image tags to ${COMMIT_SHA}" || echo "No changes to commit"
-                        
-                        # Push changes back to the repository
-                        git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/todo-app.git
-                        git push origin HEAD:main
-                        '''
-                        }
-                    }
-                }
-                stage('Update Frontend Image Tag') {
-                    when {
-                        changeset "frontend/**"
-                    }
-                    steps {
-                        withCredentials([usernamePassword(credentialsId: 'GIT_CREDS', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
-                            sh '''
-                        # Update frontend image tag
-                        sed -i "s|image: registry.digitalocean.com/debjotimallick/todoapp-frontend:[a-z0-9]*|image: ${FRONTEND_TAG}|" k8s/frontend.yaml
-                        
-                        # Configure git
-                        git config --global user.name "${GIT_USERNAME}"
-                        git config --global user.email "debjoti.mallick@hotmail.com"
-                            
-                        # Commit and push changes
-                        git add k8s/frontend.yaml
-                        git commit -m "Update image tags to ${COMMIT_SHA}" || echo "No changes to commit"
-                        
-                        # Push changes back to the repository
-                        git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/todo-app.git
-                        git push origin HEAD:main
-                        '''
                         }
                     }
                 }
