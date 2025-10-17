@@ -1,0 +1,20 @@
+{{- range $component := list "frontend" "backend" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "todoapp.fullname" $ }}-{{ $component }}
+  labels:
+    {{- include "todoapp.labels" $ | nindent 4 }}
+    component: {{ $component }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ index $.Values $component "service" "port" }}
+      targetPort: {{ index $.Values $component "service" "targetPort" }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "todoapp.selectorLabels" $ | nindent 4 }}
+    component: {{ $component }}
+---
+{{- end }}

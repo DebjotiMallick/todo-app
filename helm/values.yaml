@@ -1,0 +1,115 @@
+frontend:
+  replicaCount: 1
+  image:
+    repository: debjotimallick/todoapp-frontend
+    tag: "1.0.1"
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      memory: "128Mi"
+      cpu: "500m"
+  service:
+    port: 80
+    targetPort: 80
+
+backend:
+  replicaCount: 1
+  image:
+    repository: debjotimallick/todoapp-backend
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      memory: "128Mi"
+      cpu: "500m"
+  service:
+    port: 8000
+    targetPort: 8000
+
+postgresql:
+  enabled: true
+  image:
+    repository: bitnamilegacy/postgresql
+    tag: latest
+  auth:
+    username: todo_user
+    password: todo_password
+    database: todo_db
+  external:
+    enabled: false
+    host: mydb.example.com
+    port: 5432
+    username: external_user
+    password: external_password
+    database: external_db
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/hsts: "true"
+    nginx.ingress.kubernetes.io/hsts-max-age: "31536000"
+    nginx.ingress.kubernetes.io/hsts-include-subdomains: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+  hosts:
+    - host: todo.debjotimallick.store
+      paths:
+        - path: /api
+          pathType: Prefix
+          service: todoapp-backend
+          port: 8000
+        - path: /
+          pathType: Prefix
+          service: todoapp-frontend
+          port: 80
+  tls: []
+
+resources: {}
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+
+volumes: []
+
+volumeMounts: []
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
