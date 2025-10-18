@@ -7,21 +7,32 @@ pipeline {
         BACKEND_IMAGE  = "todo-app-backend"
         FRONTEND_IMAGE = "todo-app-frontend"
         DOCKER_CREDS   = "DOCKER_CREDS"
-        // COMMIT_SHA     = "${env.GIT_COMMIT.take(7)}"
-        // BACKEND_TAG    = "${REGISTRY_URL}/${REGISTRY_NAME}/${BACKEND_IMAGE}:${COMMIT_SHA}"
-        // BACKEND_LATEST = "${REGISTRY_URL}/${REGISTRY_NAME}/${BACKEND_IMAGE}:latest"
-        // FRONTEND_TAG   = "${REGISTRY_URL}/${REGISTRY_NAME}/${FRONTEND_IMAGE}:${COMMIT_SHA}"
-        // FRONTEND_LATEST= "${REGISTRY_URL}/${REGISTRY_NAME}/${FRONTEND_IMAGE}:latest"
+    }
+
+    triggers {
+        githubPush()
+    }
+
+    options {
+        disableConcurrentBuilds()
     }
 
     stages {
-        stage('Checkout SCM') {
+        stage('Check Tag Trigger') {
             when {
-                anyOf {
-                    changeset "backend/**"
-                    changeset "frontend/**"
+                not {
+                    expression { return env.GIT_BRANCH ==~ /^refs\/tags\/.*/ }
                 }
             }
+            steps {
+                echo "❌ Not a tag build — skipping pipeline."
+                script { currentBuild.result = 'ABORTED' }
+                error("Aborting: this pipeline only runs on tag creation.")
+            }
+        }
+
+
+        stage('Checkout SCM') {
             steps {
                 checkout scm
             }
@@ -30,8 +41,8 @@ pipeline {
         stage('Determine Image Tag') {
             steps {
                 script {
-                    // try to get an exact tag for HEAD, otherwise fall back to short commit SHA
-                    def tag = sh(returnStdout: true, script: 'git describe --tags --exact-match || git rev-parse --short=7 HEAD').trim()
+                    // Get the current tag 
+                    def tag = sh(returnStdout: true, script: 'git describe --tags --exact-match').trim()
                     env.IMAGE_TAG = tag
                     env.BACKEND_TAG = "${env.REGISTRY_URL}/${env.REGISTRY_NAME}/${env.BACKEND_IMAGE}:${tag}"
                     env.BACKEND_LATEST = "${env.REGISTRY_URL}/${env.REGISTRY_NAME}/${env.BACKEND_IMAGE}:latest"
@@ -43,12 +54,6 @@ pipeline {
         }
 
         stage('Build') {
-            when {
-                anyOf {
-                    changeset "backend/**"
-                    changeset "frontend/**"
-                }
-            }
             parallel {
                 stage('Build Backend') {
                     when {
@@ -67,11 +72,6 @@ pipeline {
                     }
                 }
                 stage('Build Frontend') {
-                    when {
-                        anyOf {
-                            changeset "frontend/**"
-                        }
-                    }
                     steps {
                         dir('frontend') {
                             sh '''
@@ -86,12 +86,6 @@ pipeline {
         }
 
         stage('Push to Container Registry') {
-            when {
-                anyOf {
-                    changeset "backend/**"
-                    changeset "frontend/**"
-                }
-            }
             parallel {
                 stage('Push Backend') {
                     when {
@@ -115,11 +109,6 @@ pipeline {
                     }
                 }
                 stage('Push Frontend') {
-                    when {
-                        anyOf {
-                            changeset "frontend/**"
-                        }
-                    }
                     steps {
                         withCredentials([usernamePassword(credentialsId: DOCKER_CREDS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                             sh '''
