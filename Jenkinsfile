@@ -19,18 +19,21 @@ pipeline {
 
     stages {
         stage('Check Tag Trigger') {
-            when {
-                not {
-                    expression { return env.GIT_BRANCH ==~ /^refs\/tags\/.*/ }
+            steps {
+                script {
+                    def tag = sh(returnStdout: true, script: "git describe --tags --exact-match || true").trim()
+                    if (tag) {
+                        echo "Detected tag build: ${tag}"
+                        env.IS_TAG_BUILD = "true"
+                        env.IMAGE_TAG = tag
+                    } else {
+                        echo "Not a tag build — skipping pipeline."
+                        currentBuild.result = 'ABORTED'
+                        error("Aborting non-tag build.")
+                    }
                 }
             }
-            steps {
-                echo "❌ Not a tag build — skipping pipeline."
-                script { currentBuild.result = 'ABORTED' }
-                error("Aborting: this pipeline only runs on tag creation.")
-            }
         }
-
 
         stage('Checkout SCM') {
             steps {
