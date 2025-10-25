@@ -14,6 +14,12 @@ pipeline {
     }
 
     stages {
+        stage('Checkout SCM') {
+            steps {
+                checkout scm
+            }
+        }
+
         stage('Check Tag Trigger') {
             steps {
                 script {
@@ -28,12 +34,6 @@ pipeline {
                         error("Aborting non-tag build.")
                     }
                 }
-            }
-        }
-
-        stage('Checkout SCM') {
-            steps {
-                checkout scm
             }
         }
 
