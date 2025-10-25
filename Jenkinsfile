@@ -7,8 +7,6 @@ pipeline {
         BACKEND_IMAGE  = "todo-app-backend"
         FRONTEND_IMAGE = "todo-app-frontend"
         DOCKER_CREDS   = "DOCKER_CREDS"
-        IS_TAG_BUILD   = "false"
-        IMAGE_TAG      = ""
     }
 
     stages {
@@ -24,7 +22,6 @@ pipeline {
                     def tag = sh(returnStdout: true, script: "git describe --tags --exact-match || true").trim()
                     if (tag) {
                         echo "Detected tag build: ${tag}"
-                        env.IS_TAG_BUILD = "true"
                         env.IMAGE_TAG = tag
                     } else {
                         echo "Not a tag build — skipping pipeline."
@@ -36,7 +33,6 @@ pipeline {
         }
 
         stage('Determine Image Tag') {
-            when { expression { return env.IS_TAG_BUILD == "true" } }
             steps {
                 script {
                     env.BACKEND_TAG = "${env.REGISTRY_URL}/${env.REGISTRY_NAME}/${env.BACKEND_IMAGE}:${env.IMAGE_TAG}"
@@ -50,7 +46,6 @@ pipeline {
         }
 
         stage('Build') {
-            when { expression { return env.IS_TAG_BUILD == "true" } }
             parallel {
                 stage('Build Backend') {
                     steps {
@@ -78,7 +73,6 @@ pipeline {
         }
 
         stage('Push to Container Registry') {
-            when { expression { return env.IS_TAG_BUILD == "true" } }
             parallel {
                 stage('Push Backend') {
                     steps {
