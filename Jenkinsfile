@@ -9,14 +9,6 @@ pipeline {
         DOCKER_CREDS   = "DOCKER_CREDS"
     }
 
-    triggers {
-        githubPush()
-    }
-
-    options {
-        disableConcurrentBuilds()
-    }
-
     stages {
         stage('Check Tag Trigger') {
             steps {
@@ -59,11 +51,6 @@ pipeline {
         stage('Build') {
             parallel {
                 stage('Build Backend') {
-                    when {
-                        anyOf {
-                            changeset "backend/**"
-                        }
-                    }
                     steps {
                         dir('backend') {
                             sh '''
@@ -91,11 +78,6 @@ pipeline {
         stage('Push to Container Registry') {
             parallel {
                 stage('Push Backend') {
-                    when {
-                        anyOf {
-                            changeset "backend/**"
-                        }
-                    }
                     steps {
                         withCredentials([usernamePassword(credentialsId: DOCKER_CREDS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                             sh '''
