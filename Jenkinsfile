@@ -7,10 +7,8 @@ pipeline {
         BACKEND_IMAGE  = "todo-app-backend"
         FRONTEND_IMAGE = "todo-app-frontend"
         DOCKER_CREDS   = "DOCKER_CREDS"
-    }
-
-    options {
-        skipDefaultCheckout true 
+        IS_TAG_BUILD   = "false"
+        IMAGE_TAG      = ""
     }
 
     stages {
@@ -38,21 +36,21 @@ pipeline {
         }
 
         stage('Determine Image Tag') {
+            when { expression { return env.IS_TAG_BUILD == "true" } }
             steps {
                 script {
-                    // Get the current tag 
-                    def tag = sh(returnStdout: true, script: 'git describe --tags --exact-match').trim()
-                    env.IMAGE_TAG = tag
-                    env.BACKEND_TAG = "${env.REGISTRY_URL}/${env.REGISTRY_NAME}/${env.BACKEND_IMAGE}:${tag}"
+                    env.BACKEND_TAG = "${env.REGISTRY_URL}/${env.REGISTRY_NAME}/${env.BACKEND_IMAGE}:${env.IMAGE_TAG}"
                     env.BACKEND_LATEST = "${env.REGISTRY_URL}/${env.REGISTRY_NAME}/${env.BACKEND_IMAGE}:latest"
-                    env.FRONTEND_TAG = "${env.REGISTRY_URL}/${env.REGISTRY_NAME}/${env.FRONTEND_IMAGE}:${tag}"
+                    env.FRONTEND_TAG = "${env.REGISTRY_URL}/${env.REGISTRY_NAME}/${env.FRONTEND_IMAGE}:${env.IMAGE_TAG}"
                     env.FRONTEND_LATEST = "${env.REGISTRY_URL}/${env.REGISTRY_NAME}/${env.FRONTEND_IMAGE}:latest"
-                    echo "Using image tag: ${env.IMAGE_TAG}"
+                    echo "Backend Image Tag: ${env.BACKEND_TAG}"
+                    echo "Frontend Image Tag: ${env.FRONTEND_TAG}"
                 }
             }
         }
 
         stage('Build') {
+            when { expression { return env.IS_TAG_BUILD == "true" } }
             parallel {
                 stage('Build Backend') {
                     steps {
@@ -80,6 +78,7 @@ pipeline {
         }
 
         stage('Push to Container Registry') {
+            when { expression { return env.IS_TAG_BUILD == "true" } }
             parallel {
                 stage('Push Backend') {
                     steps {
