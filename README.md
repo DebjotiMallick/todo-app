@@ -1,6 +1,6 @@
 To Do App.
 
-App Stack:
+Stack:
 Frontend: React
 Backend: FastAPI
 
