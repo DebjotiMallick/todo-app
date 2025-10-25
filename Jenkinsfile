@@ -9,6 +9,10 @@ pipeline {
         DOCKER_CREDS   = "DOCKER_CREDS"
     }
 
+    options {
+        skipDefaultCheckout true 
+    }
+
     stages {
         stage('Check Tag Trigger') {
             steps {
