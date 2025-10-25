@@ -5,5 +5,5 @@ Frontend: React
 Backend: FastAPI
 Database: PostgreSQL
 
-CI: Jenkin
+CI: Jenkins
 CD: ArgoCD
